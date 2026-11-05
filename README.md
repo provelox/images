@@ -10,12 +10,14 @@ These are **unofficial** images. They are not published or endorsed by the upstr
 | --- | --- | --- |
 | [`images/strapi`](images/strapi) | [Strapi](https://strapi.io) 5 CMS (production runtime, plus a develop stage) | `ghcr.io/provelox/strapi` |
 
-Images are published to GitHub Container Registry for `linux/amd64` and `linux/arm64`:
+Images are published to GitHub Container Registry for `linux/amd64` and `linux/arm64`, only when a release tag is pushed (for example `strapi-v1.0.0`):
 
-- `:edge` and `:sha-<commit>` from `main`.
-- `:<version>`, `:<major>.<minor>`, `:<major>` and `:latest` from release tags such as `strapi-v1.0.0`.
+| Tag | Mode |
+| --- | --- |
+| `ghcr.io/provelox/strapi:1.0.0`, `:1.0`, `:1`, `:latest` | Production (`strapi start`) |
+| `ghcr.io/provelox/strapi:1.0.0-dev`, `:1.0-dev`, `:1-dev`, `:latest-dev` | Development (`strapi develop`), for creating content types |
 
-Pull requests build and smoke-test every image but publish nothing.
+Pushes and pull requests build and smoke-test every image but publish nothing.
 
 ## Layout
 
