@@ -8,7 +8,14 @@ These are **unofficial** images. They are not published or endorsed by the upstr
 
 | Image | Packages | Status |
 | --- | --- | --- |
-| [`images/strapi`](images/strapi) | [Strapi](https://strapi.io) 5 CMS (production runtime, plus a develop stage) | In progress |
+| [`images/strapi`](images/strapi) | [Strapi](https://strapi.io) 5 CMS (production runtime, plus a develop stage) | `ghcr.io/provelox/strapi` |
+
+Images are published to GitHub Container Registry for `linux/amd64` and `linux/arm64`:
+
+- `:edge` and `:sha-<commit>` from `main`.
+- `:<version>`, `:<major>.<minor>`, `:<major>` and `:latest` from release tags such as `strapi-v1.0.0`.
+
+Pull requests build and smoke-test every image but publish nothing.
 
 ## Layout
 
