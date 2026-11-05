@@ -1,0 +1,26 @@
+# Never ship local secrets, databases, or build artifacts into the image
+.env
+.env.*
+!.env.example
+
+node_modules
+npm-debug.log*
+
+.git
+.gitignore
+.github
+
+.tmp
+data
+build
+dist
+.strapi
+.strapi-cloud.json
+.strapi-updater.json
+
+public/uploads
+
+coverage
+Dockerfile
+.dockerignore
+README.md

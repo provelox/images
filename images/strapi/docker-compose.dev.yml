@@ -1,0 +1,19 @@
+# Development override: runs `strapi develop` so content types can be edited in the admin.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Source changes on the host are mounted into the container and hot-reloaded.
+services:
+  strapi:
+    build:
+      target: dev
+    image: strapi:dev
+    environment:
+      NODE_ENV: development
+    ports:
+      - "1337:1337"
+      - "8000:8000"
+    volumes:
+      - ./src:/opt/app/src
+      - ./config:/opt/app/config
+      - ./database:/opt/app/database
+      - ./public:/opt/app/public
+      - uploads:/opt/app/public/uploads

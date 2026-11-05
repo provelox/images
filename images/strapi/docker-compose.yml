@@ -1,0 +1,58 @@
+# Strapi + PostgreSQL.
+#
+# Required variables are read from a .env file next to this file (or exported in your shell):
+#   APP_KEYS, API_TOKEN_SALT, ADMIN_JWT_SECRET, TRANSFER_TOKEN_SALT, JWT_SECRET, ENCRYPTION_KEY
+#   POSTGRES_PASSWORD
+#
+# Usage:
+#   docker compose up --build
+#   docker compose down        (keeps data)
+#   docker compose down -v     (also deletes the database and uploads)
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi -d strapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  strapi:
+    build: .
+    image: strapi:local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "1337:1337"
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      DATABASE_SSL: "false"
+      APP_KEYS: ${APP_KEYS:?Set APP_KEYS in .env}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:?Set API_TOKEN_SALT in .env}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?Set ADMIN_JWT_SECRET in .env}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:?Set TRANSFER_TOKEN_SALT in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env}
+      # Comma-separated browser origins allowed to call the API (empty = none)
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      - uploads:/opt/app/public/uploads
+
+volumes:
+  postgres-data:
+  uploads:

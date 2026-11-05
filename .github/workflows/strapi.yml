@@ -1,0 +1,64 @@
+name: strapi
+
+on:
+  push:
+    branches: [main]
+    paths: ["images/strapi/**", ".github/workflows/strapi.yml"]
+  pull_request:
+    paths: ["images/strapi/**", ".github/workflows/strapi.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: strapi
+          POSTGRES_USER: strapi
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U strapi -d strapi"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build -t strapi:ci images/strapi
+
+      - name: Start container against Postgres
+        run: |
+          docker run -d --name strapi --network host \
+            -e DATABASE_CLIENT=postgres -e DATABASE_HOST=127.0.0.1 -e DATABASE_PORT=5432 \
+            -e DATABASE_NAME=strapi -e DATABASE_USERNAME=strapi -e DATABASE_PASSWORD=ci-only-password \
+            -e APP_KEYS="$(openssl rand -base64 32)" \
+            -e API_TOKEN_SALT="$(openssl rand -base64 32)" \
+            -e ADMIN_JWT_SECRET="$(openssl rand -base64 32)" \
+            -e TRANSFER_TOKEN_SALT="$(openssl rand -base64 32)" \
+            -e JWT_SECRET="$(openssl rand -base64 32)" \
+            -e ENCRYPTION_KEY="$(openssl rand -base64 32)" \
+            strapi:ci
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:1337/_health || true)
+            if [ "$code" = "204" ]; then echo "healthy after ${i}s"; exit 0; fi
+            sleep 2
+          done
+          echo "Strapi did not become healthy"; docker logs strapi; exit 1
+
+      - name: Check admin and runs as non-root
+        run: |
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:1337/admin)" = "200"
+          test "$(docker exec strapi id -u)" != "0"
+
+      - name: Clean shutdown
+        if: always()
+        run: |
+          docker logs strapi || true
+          docker stop -t 20 strapi || true

@@ -1,0 +1,84 @@
+# Strapi + PostgreSQL for Provelox (New → Compose project).
+# Follows https://provelox.com docs: reference/compose-file. The same file is also valid plain Docker Compose.
+#
+# Before deploying, build and push the production image (see DOCKER.md) and enter its reference as STRAPI_IMAGE.
+
+x-provelox:
+  variables:
+    APP_KEYS:
+      secret: true
+      minLength: 32
+      label: Session keys
+      description: Strapi session key(s). Generated for you; keep them stable across updates.
+    API_TOKEN_SALT:
+      secret: true
+      minLength: 32
+      label: API token salt
+    ADMIN_JWT_SECRET:
+      secret: true
+      minLength: 32
+      label: Admin JWT secret
+    TRANSFER_TOKEN_SALT:
+      secret: true
+      minLength: 32
+      label: Transfer token salt
+    JWT_SECRET:
+      secret: true
+      minLength: 32
+      label: Users & Permissions JWT secret
+    ENCRYPTION_KEY:
+      secret: true
+      minLength: 32
+      label: Encryption key
+      description: Encrypts stored secrets. Back it up; losing it makes them unreadable.
+    POSTGRES_PASSWORD:
+      secret: true
+      minLength: 32
+      label: Database password
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi -d strapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  strapi:
+    # Image reference only (no spaces), e.g. yoelnunez/strapi:1.0.0
+    image: ${STRAPI_IMAGE:?STRAPI_IMAGE is required, e.g. yoelnunez/strapi:1.0.0}
+    restart: unless-stopped
+    depends_on: [postgres]
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      DATABASE_SSL: "false"
+      APP_KEYS: ${APP_KEYS:?APP_KEYS is required}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:?API_TOKEN_SALT is required}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:?TRANSFER_TOKEN_SALT is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      # Comma-separated browser origins allowed to call the API, e.g. https://www.example.com (empty = none)
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      - uploads:/opt/app/public/uploads
+    x-provelox:
+      expose: true # reachable from the internet; attach the domain in the service's Networking tab
+      port: 1337
+
+volumes:
+  postgres-data:
+  uploads:
